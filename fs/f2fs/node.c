@@ -402,6 +402,8 @@ void get_node_info(struct f2fs_sb_info *sbi, nid_t nid, struct node_info *ni)
 
 	memset(&ne, 0, sizeof(struct f2fs_nat_entry));
 
+	down_write(&nm_i->nat_tree_lock);
+
 	/* Check current segment summary */
 	down_read(&curseg->journal_rwsem);
 	i = lookup_journal_in_cursum(journal, NAT_JOURNAL, nid, 0);
@@ -2660,6 +2662,8 @@ void flush_nat_entries(struct f2fs_sb_info *sbi, struct cp_control *cpc)
 	/* flush dirty nats in nat entry set */
 	list_for_each_entry_safe(set, tmp, &sets, set_list)
 		__flush_nat_entry_set(sbi, set, cpc);
+
+	up_write(&nm_i->nat_tree_lock);
 
 	up_write(&nm_i->nat_tree_lock);
 
