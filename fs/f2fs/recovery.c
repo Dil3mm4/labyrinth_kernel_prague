@@ -245,6 +245,7 @@ static int find_fsync_dnodes(struct f2fs_sb_info *sbi, int type,
 		struct list_head *head, struct radix_tree_root *root)
 {
 	struct curseg_info *curseg;
+	struct inode *inode;
 	struct page *page = NULL;
 	block_t blkaddr;
 	int err = 0;
@@ -324,6 +325,15 @@ next:
 	return err;
 }
 
+static void destroy_fsync_dnodes(struct list_head *head)
+{
+	struct fsync_inode_entry *entry, *tmp;
+
+	list_for_each_entry_safe(entry, tmp, head, list)
+		del_fsync_inode(entry);
+}
+
+>>>>>>> 6d07c0f4a432... f2fs: factor out fsync inode entry operations
 static int check_index_in_prev_nodes(struct f2fs_sb_info *sbi,
 			block_t blkaddr, struct dnode_of_data *dn)
 {
