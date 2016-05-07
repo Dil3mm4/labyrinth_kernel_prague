@@ -131,7 +131,6 @@ static int recover_dentry(struct inode *inode, struct page *ipage,
 		if (IS_ERR(entry)) {
 			dir = ERR_CAST(entry);
 			err = PTR_ERR(entry);
-			goto out;
 		}
 	}
 
