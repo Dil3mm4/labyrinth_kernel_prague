@@ -1200,6 +1200,7 @@ static struct bio *f2fs_grab_bio(struct inode *inode, block_t blkaddr,
 	bio = bio_alloc(GFP_KERNEL, min_t(int, nr_pages, BIO_MAX_PAGES));
 	if (!bio) {
 		if (ctx)
+<<<<<<< HEAD
 			fscrypt_release_ctx(ctx);
 		return ERR_PTR(-ENOMEM);
 	}
@@ -1213,6 +1214,16 @@ static struct bio *f2fs_grab_bio(struct inode *inode, block_t blkaddr,
 		bio->index = page->index;
 	}
 #endif
+=======
+			f2fs_release_crypto_ctx(ctx);
+		return ERR_PTR(-ENOMEM);
+	}
+	bio->bi_bdev = bdev;
+	bio->bi_iter.bi_sector = SECTOR_FROM_BLOCK(blkaddr);
+	bio->bi_end_io = f2fs_read_end_io;
+	bio->bi_private = ctx;
+
+>>>>>>> 70c357851b01... f2fs: fix to avoid reading out encrypted data in page cache
 	return bio;
 }
 
@@ -1323,12 +1334,18 @@ submit_and_realloc:
 			bio = NULL;
 		}
 		if (bio == NULL) {
+<<<<<<< HEAD
 			bio = f2fs_grab_bio(inode, block_nr, nr_pages, page);
 			if (IS_ERR(bio)) {
 				bio = NULL;
 				goto set_error_page;
 			}
 			bio_set_op_attrs(bio, REQ_OP_READ, 0);
+=======
+			bio = f2fs_grab_bio(inode, block_nr, nr_pages);
+			if (IS_ERR(bio))
+				goto set_error_page;
+>>>>>>> 70c357851b01... f2fs: fix to avoid reading out encrypted data in page cache
 		}
 
 		if (bio_add_page(bio, page, blocksize, 0) < blocksize)
@@ -2029,6 +2046,23 @@ repeat:
 		SetPageUptodate(page);
 	} else {
 		struct bio *bio;
+<<<<<<< HEAD
+=======
+
+		bio = f2fs_grab_bio(inode, dn.data_blkaddr, 1);
+		if (IS_ERR(bio)) {
+			err = PTR_ERR(bio);
+			goto fail;
+		}
+
+		if (bio_add_page(bio, page, PAGE_CACHE_SIZE, 0) < PAGE_CACHE_SIZE) {
+			bio_put(bio);
+			err = -EFAULT;
+			goto fail;
+		}
+
+		submit_bio(READ_SYNC, bio);
+>>>>>>> 70c357851b01... f2fs: fix to avoid reading out encrypted data in page cache
 
 		bio = f2fs_grab_bio(inode, blkaddr, 1, page);
 		if (IS_ERR(bio)) {
@@ -2049,10 +2083,13 @@ repeat:
 			f2fs_put_page(page, 1);
 			goto repeat;
 		}
+<<<<<<< HEAD
 		if (unlikely(!PageUptodate(page))) {
 			err = -EIO;
 			goto fail;
 		}
+=======
+>>>>>>> 70c357851b01... f2fs: fix to avoid reading out encrypted data in page cache
 	}
 	return 0;
 
