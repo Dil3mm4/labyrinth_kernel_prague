@@ -1587,7 +1587,7 @@ IMG_RESULT SYSOSKM_CpuUmAddrToCpuPAddrArray(
 
     down_write(&current->mm->mmap_sem);
     ret = get_user_pages(current, current->mm, umAddr,
-                         numPages, 1, 0, pages, vmas);
+                         numPages, 1, pages, vmas);
 
 #if defined(__i386__) || defined(__x86_64__)
     /* Set memory as uncached */
