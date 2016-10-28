@@ -9005,10 +9005,6 @@ void ufshcd_remove(struct ufs_hba *hba)
 	ufshcd_disable_intr(hba, hba->intr_mask);
 	ufshcd_hba_stop(hba);
 
-	scsi_host_put(hba->host);
-
-	wake_lock_destroy(&ffu_lock);
-
 	ufshcd_exit_clk_gating(hba);
 
 	ufshcd_exit_latency_hist(hba);
@@ -9411,7 +9407,7 @@ exit_gating:
 	ufshcd_exit_fatal_error_test(hba);
 #endif
 out_disable:
-	scsi_host_put(host);
+	hba->is_irq_enabled = false;
 	ufshcd_hba_exit(hba);
 out_error:
 	ufshcd_send_scsi_sync_cache_deinit();
