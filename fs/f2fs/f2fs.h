@@ -2617,6 +2617,13 @@ static inline block_t device_free_space_threshold(struct f2fs_sb_info *sbi)
 					DEVICE_FREE_SPACE_PERCENT) / 100;
 }
 
+static inline bool is_valid_blkaddr(block_t blkaddr)
+{
+	if (blkaddr == NEW_ADDR || blkaddr == NULL_ADDR)
+		return false;
+	return true;
+}
+
 /*
  * file.c
  */
