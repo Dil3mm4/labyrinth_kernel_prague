@@ -363,7 +363,8 @@ err_sysfs1:
 	sysfs_remove_group(&pdev->dev.kobj, &hisi_coul_attr_group);
 err_sysfs:
 	kfree(di);
-	return -1;
+	di = NULL;
+	return;
 }
 
 static int hisi_coul_drv_test_remove(struct platform_device *pdev)
