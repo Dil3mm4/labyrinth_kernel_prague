@@ -287,16 +287,12 @@ static int of_thermal_set_mode(struct thermal_zone_device *tz,
 
 	mutex_lock(&tz->lock);
 
-	if (mode == THERMAL_DEVICE_ENABLED ) {
+	if (mode == THERMAL_DEVICE_ENABLED) {
 		tz->polling_delay = data->polling_delay;
-#ifdef CONFIG_HISI_IPA_THERMAL
 		tz->passive_delay = data->passive_delay;
-#endif
 	} else {
 		tz->polling_delay = 0;
-#ifdef CONFIG_HISI_IPA_THERMAL
 		tz->passive_delay = 0;
-#endif
 	}
 
 	mutex_unlock(&tz->lock);
