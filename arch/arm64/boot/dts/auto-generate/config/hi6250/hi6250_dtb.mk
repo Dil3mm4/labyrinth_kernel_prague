@@ -1,6 +1,8 @@
 #Copyright Huawei Technologies Co., Ltd. 1998-2011. All rights reserved.
 #This file is Auto Generated 
 
+LOCAL_CFLAGS += -w
+
 dtb-y += hi6250/hi6250_udp_default_config.dtb
 dtb-y += hi6250/hi6250_hi6250_fpga_config.dtb
 dtb-y += hi6250/hi6250_udp_noRF_config.dtb
