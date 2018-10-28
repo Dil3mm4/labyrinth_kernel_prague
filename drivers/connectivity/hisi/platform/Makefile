@@ -168,7 +168,7 @@ endif
 EXTRA_CFLAGS = $(HI1102_INCLUDES)
 EXTRA_CFLAGS += $(COPTS) $(KBUILD_CFLAGS)
 EXTRA_CFLAGS += $(COMM_COPTS)
-EXTRA_CFLAGS += -Werror -Wuninitialized -Wempty-body -Wtype-limits
+EXTRA_CFLAGS += -Werror -Wuninitialized -Wempty-body -Wtype-limits -Wno-non-literal-null-conversion
 
 EXTRA_CFLAGS +=  -fno-pic
 MODFLAGS = -fno-pic

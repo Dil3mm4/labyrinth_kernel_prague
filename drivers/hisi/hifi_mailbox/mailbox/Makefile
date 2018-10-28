@@ -15,3 +15,5 @@ obj-$(CONFIG_HIFI_MAILBOX)	+= drv_mailbox_debug.o
 obj-$(CONFIG_HIFI_MAILBOX)	+= drv_mailbox_port_linux.o
 obj-$(CONFIG_HIFI_MAILBOX)	+= drv_mailbox_ifc.o
 obj-$(CONFIG_HIFI_MAILBOX)	+= drv_mailbox.o
+
+subdir-ccflags-y += -Wno-format-security

@@ -124,7 +124,7 @@ int __init bfmr_init(void)
 
 static void __exit bfmr_exit(void)
 {
-    return 0;
+    return;
 }
 
 module_init(bfmr_init);

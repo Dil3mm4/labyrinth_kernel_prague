@@ -21,7 +21,7 @@ $(OASES_OUT)/%.bin: $(OASES_OUT)/%.oas
 	$(OBJCOPY) -O binary $^ $@
 
 $(OASES_OUT)/%.oas: $(OASES_TOP)/%.S
-	$(CC) -c -o $@ $^
+	$(CROSS_COMPILE)gcc -c -o $@ $^
 
 $(OASES_OUT)/inlinehook_offset.h: $(OASES_INLINEHOOK_AUTOGEN)
 	$(OASES_TOP)/inlinehook_gen_off $@ $(OASES_TOP)/inlinehook_const.h $^

@@ -46,3 +46,5 @@ obj-$(CONFIG_HISI_BALONG_MODEM) +=ims/
 #endif
 
 endif
+
+subdir-ccflags-y += -Wno-pragma-pack

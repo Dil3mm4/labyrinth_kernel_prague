@@ -1841,7 +1841,7 @@ void wlan_pm_wdg_timeout(struct wlan_pm_s *pm_data)
 		if(0 == pm_data->ul_packet_cnt)
 		{
 			pm_data->ul_wdg_timeout_curr_cnt++;
-			if((pm_data->ul_wdg_timeout_curr_cnt == pm_data->ul_wdg_timeout_cnt))
+			if(pm_data->ul_wdg_timeout_curr_cnt == pm_data->ul_wdg_timeout_cnt)
 			{
                 if(0 != wlan_pm_work_submit(pm_data, &pm_data->st_sleep_work))
                 {
