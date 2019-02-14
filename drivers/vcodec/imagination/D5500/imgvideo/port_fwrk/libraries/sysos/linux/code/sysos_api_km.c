@@ -1586,7 +1586,7 @@ IMG_RESULT SYSOSKM_CpuUmAddrToCpuPAddrArray(
     }
 
     down_write(&current->mm->mmap_sem);
-    ret = get_user_pages(current, current->mm, umAddr,
+    ret = __get_user_pages(current, current->mm, umAddr,
                          numPages, 1, 0, pages, vmas);
 
 #if defined(__i386__) || defined(__x86_64__)
