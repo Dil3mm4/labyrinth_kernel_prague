@@ -2339,68 +2339,6 @@ static int sanity_check_raw_super(struct f2fs_sb_info *sbi,
 		return 1;
 	}
 
-	segment_count = le32_to_cpu(raw_super->segment_count);
-	segs_per_sec = le32_to_cpu(raw_super->segs_per_sec);
-	secs_per_zone = le32_to_cpu(raw_super->secs_per_zone);
-	total_sections = le32_to_cpu(raw_super->section_count);
-
-	/* blocks_per_seg should be 512, given the above check */
-	blocks_per_seg = 1 << le32_to_cpu(raw_super->log_blocks_per_seg);
-
-	if (segment_count > F2FS_MAX_SEGMENT ||
-				segment_count < F2FS_MIN_SEGMENTS) {
-		f2fs_msg(sb, KERN_INFO,
-			"Invalid segment count (%u)",
-			segment_count);
-		return 1;
-	}
-
-	if (total_sections > segment_count ||
-			total_sections < F2FS_MIN_SEGMENTS ||
-			segs_per_sec > segment_count || !segs_per_sec) {
-		f2fs_msg(sb, KERN_INFO,
-			"Invalid segment/section count (%u, %u x %u)",
-			segment_count, total_sections, segs_per_sec);
-		return 1;
-	}
-
-	if ((segment_count / segs_per_sec) < total_sections) {
-		f2fs_msg(sb, KERN_INFO,
-			"Small segment_count (%u < %u * %u)",
-			segment_count, segs_per_sec, total_sections);
-		return 1;
-	}
-
-	if (segment_count > (le64_to_cpu(raw_super->block_count) >> 9)) {
-		f2fs_msg(sb, KERN_INFO,
-			"Wrong segment_count / block_count (%u > %llu)",
-			segment_count, le64_to_cpu(raw_super->block_count));
-		return 1;
-	}
-
-	if (secs_per_zone > total_sections || !secs_per_zone) {
-		f2fs_msg(sb, KERN_INFO,
-			"Wrong secs_per_zone / total_sections (%u, %u)",
-			secs_per_zone, total_sections);
-		return 1;
-	}
-	if (le32_to_cpu(raw_super->extension_count) > F2FS_MAX_EXTENSION) {
-		f2fs_msg(sb, KERN_INFO,
-			"Corrupted extension count (%u > %u)",
-			le32_to_cpu(raw_super->extension_count),
-			F2FS_MAX_EXTENSION);
-		return 1;
-	}
-
-	if (le32_to_cpu(raw_super->cp_payload) >
-				(blocks_per_seg - F2FS_CP_PACKS)) {
-		f2fs_msg(sb, KERN_INFO,
-			"Insane cp_payload (%u > %u)",
-			le32_to_cpu(raw_super->cp_payload),
-			blocks_per_seg - F2FS_CP_PACKS);
-		return 1;
-	}
-
 	/* check reserved ino info */
 	if (le32_to_cpu(raw_super->node_ino) != 1 ||
 		le32_to_cpu(raw_super->meta_ino) != 2 ||
@@ -2410,6 +2348,13 @@ static int sanity_check_raw_super(struct f2fs_sb_info *sbi,
 			le32_to_cpu(raw_super->node_ino),
 			le32_to_cpu(raw_super->meta_ino),
 			le32_to_cpu(raw_super->root_ino));
+		return 1;
+	}
+
+	if (le32_to_cpu(raw_super->segment_count) > F2FS_MAX_SEGMENT) {
+		f2fs_msg(sb, KERN_INFO,
+			"Invalid segment count (%u)",
+			le32_to_cpu(raw_super->segment_count));
 		return 1;
 	}
 
@@ -2430,9 +2375,6 @@ int sanity_check_ckpt(struct f2fs_sb_info *sbi)
 	unsigned int sit_segs, nat_segs;
 	unsigned int sit_bitmap_size, nat_bitmap_size;
 	unsigned int log_blocks_per_seg;
-	unsigned int segment_count_main;
-	unsigned int cp_pack_start_sum, cp_payload;
-	block_t user_block_count;
 	int i;
 
 	total = le32_to_cpu(raw_super->segment_count);
@@ -2475,23 +2417,13 @@ int sanity_check_ckpt(struct f2fs_sb_info *sbi)
 
 	sit_bitmap_size = le32_to_cpu(ckpt->sit_ver_bitmap_bytesize);
 	nat_bitmap_size = le32_to_cpu(ckpt->nat_ver_bitmap_bytesize);
+	log_blocks_per_seg = le32_to_cpu(raw_super->log_blocks_per_seg);
 
 	if (sit_bitmap_size != ((sit_segs / 2) << log_blocks_per_seg) / 8 ||
 		nat_bitmap_size != ((nat_segs / 2) << log_blocks_per_seg) / 8) {
 		f2fs_msg(sbi->sb, KERN_ERR,
 			"Wrong bitmap size: sit: %u, nat:%u",
 			sit_bitmap_size, nat_bitmap_size);
-		return 1;
-	}
-
-	cp_pack_start_sum = __start_sum_addr(sbi);
-	cp_payload = __cp_payload(sbi);
-	if (cp_pack_start_sum < cp_payload + 1 ||
-		cp_pack_start_sum > blocks_per_seg - 1 -
-			NR_CURSEG_TYPE) {
-		f2fs_msg(sbi->sb, KERN_ERR,
-			"Wrong cp_pack_start_sum: %u",
-			cp_pack_start_sum);
 		return 1;
 	}
 
@@ -3129,15 +3061,6 @@ try_onemore:
 			need_fsck = true;
 			f2fs_msg(sb, KERN_ERR,
 				"Cannot recover all fsync data errno=%d", err);
-			goto free_kobj;
-		}
-	} else {
-		err = recover_fsync_data(sbi, true);
-
-		if (!f2fs_readonly(sb) && err > 0) {
-			err = -EINVAL;
-			f2fs_msg(sb, KERN_ERR,
-				"Need to recover fsync data");
 			goto free_kobj;
 		}
 	} else {

@@ -708,10 +708,11 @@ int create_flush_cmd_control(struct f2fs_sb_info *sbi)
 	/*lint -restore*/
 	init_waitqueue_head(&fcc->flush_wait_queue);
 	init_llist_head(&fcc->issue_list);
-	SM_I(sbi)->cmd_control_info = fcc;
+	SM_I(sbi)->fcc_info = fcc;
 	if (!test_opt(sbi, FLUSH_MERGE))
 		return err;
 
+init_thread:
 	fcc->f2fs_issue_flush = kthread_run(issue_flush_thread, sbi,
 				"f2fs_flush-%u:%u", MAJOR(dev), MINOR(dev));
 	if (IS_ERR(fcc->f2fs_issue_flush)) {
@@ -2072,7 +2073,7 @@ bool is_checkpointed_data(struct f2fs_sb_info *sbi, block_t blkaddr)
 	struct seg_entry *se;
 	bool is_cp = false;
 
-	if (!is_valid_data_blkaddr(sbi, blkaddr))
+	if (blkaddr == NEW_ADDR || blkaddr == NULL_ADDR)
 		return true;
 
 	mutex_lock(&sit_i->sentry_lock);
@@ -3520,7 +3521,7 @@ static int build_curseg(struct f2fs_sb_info *sbi)
 }
 /*lint -restore*/
 
-static int build_sit_entries(struct f2fs_sb_info *sbi)
+static void build_sit_entries(struct f2fs_sb_info *sbi)
 {
 	struct sit_info *sit_i = SIT_I(sbi);
 	struct curseg_info *curseg = CURSEG_I(sbi, CURSEG_COLD_DATA);
@@ -3548,9 +3549,7 @@ static int build_sit_entries(struct f2fs_sb_info *sbi)
 			sit = sit_blk->entries[SIT_ENTRY_OFFSET(sit_i, start)];
 			f2fs_put_page(page, 1);
 
-			err = check_block_count(sbi, start, &sit);
-			if (err)
-				return err;
+			check_block_count(sbi, start, &sit);
 			seg_info_from_raw_sit(se, &sit);
 
 			/* build discard map only one time */
@@ -3585,9 +3584,7 @@ static int build_sit_entries(struct f2fs_sb_info *sbi)
 
 		old_valid_blocks = se->valid_blocks;
 
-		err = check_block_count(sbi, start, &sit);
-		if (err)
-			break;
+		check_block_count(sbi, start, &sit);
 		seg_info_from_raw_sit(se, &sit);
 
 		if (f2fs_discard_en(sbi)) {
@@ -3771,9 +3768,7 @@ int build_segment_manager(struct f2fs_sb_info *sbi)
 		return err;
 
 	/* reinit free segmap based on SIT */
-	err = build_sit_entries(sbi);
-	if (err)
-		return err;
+	build_sit_entries(sbi);
 
 	init_free_segmap(sbi);
 	err = build_dirty_segmap(sbi);
