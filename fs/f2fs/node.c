@@ -319,7 +319,8 @@ static void set_node_addr(struct f2fs_sb_info *sbi, struct node_info *ni,
 			new_blkaddr == NULL_ADDR);
 	f2fs_bug_on(sbi, nat_get_blkaddr(e) == NEW_ADDR &&
 			new_blkaddr == NEW_ADDR);
-	f2fs_bug_on(sbi, is_valid_data_blkaddr(sbi, nat_get_blkaddr(e)) &&
+	f2fs_bug_on(sbi, nat_get_blkaddr(e) != NEW_ADDR &&
+			nat_get_blkaddr(e) != NULL_ADDR &&
 			new_blkaddr == NEW_ADDR);
 
 	/* increment version no as node is removed */
@@ -334,7 +335,7 @@ static void set_node_addr(struct f2fs_sb_info *sbi, struct node_info *ni,
 
 	/* change address */
 	nat_set_blkaddr(e, new_blkaddr);
-	if (!is_valid_data_blkaddr(sbi, new_blkaddr))
+	if (new_blkaddr == NEW_ADDR || new_blkaddr == NULL_ADDR)
 		set_nat_flag(e, IS_CHECKPOINTED, false);
 	__set_nat_cache_dirty(nm_i, e);
 
@@ -400,8 +401,6 @@ void get_node_info(struct f2fs_sb_info *sbi, nid_t nid, struct node_info *ni)
 	}
 
 	memset(&ne, 0, sizeof(struct f2fs_nat_entry));
-
-	down_write(&nm_i->nat_tree_lock);
 
 	/* Check current segment summary */
 	down_read(&curseg->journal_rwsem);
@@ -2661,8 +2660,6 @@ void flush_nat_entries(struct f2fs_sb_info *sbi, struct cp_control *cpc)
 	/* flush dirty nats in nat entry set */
 	list_for_each_entry_safe(set, tmp, &sets, set_list)
 		__flush_nat_entry_set(sbi, set, cpc);
-
-	up_write(&nm_i->nat_tree_lock);
 
 	up_write(&nm_i->nat_tree_lock);
 

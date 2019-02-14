@@ -304,7 +304,7 @@ struct cp_control {
 };
 
 /*
- * indicate meta/data type
+ * For CP/NAT/SIT/SSA readahead
  */
 enum {
 	META_CP,
@@ -312,8 +312,6 @@ enum {
 	META_SIT,
 	META_SSA,
 	META_POR,
-	DATA_GENERIC,
-	META_GENERIC,
 };
 
 /* for the list of ino */
@@ -1953,25 +1951,20 @@ static inline void *__bitmap_ptr(struct f2fs_sb_info *sbi, int flag)
 
 static inline block_t __start_cp_addr(struct f2fs_sb_info *sbi)
 {
-	block_t start_addr = le32_to_cpu(F2FS_RAW_SUPER(sbi)->cp_blkaddr);
+	block_t start_addr;
+	struct f2fs_checkpoint *ckpt = F2FS_CKPT(sbi);
+	unsigned long long ckpt_version = cur_cp_version(ckpt);
 
-	if (sbi->cur_cp_pack == 2)
+	start_addr = le32_to_cpu(F2FS_RAW_SUPER(sbi)->cp_blkaddr);
+
+	/*
+	 * odd numbered checkpoint should at cp segment 0
+	 * and even segment must be at cp segment 1
+	 */
+	if (!(ckpt_version & 1))
 		start_addr += sbi->blocks_per_seg;
+
 	return start_addr;
-}
-
-static inline block_t __start_cp_next_addr(struct f2fs_sb_info *sbi)
-{
-	block_t start_addr = le32_to_cpu(F2FS_RAW_SUPER(sbi)->cp_blkaddr);
-
-	if (sbi->cur_cp_pack == 1)
-		start_addr += sbi->blocks_per_seg;
-	return start_addr;
-}
-
-static inline void __set_cp_next_pack(struct f2fs_sb_info *sbi)
-{
-	sbi->cur_cp_pack = (sbi->cur_cp_pack == 1) ? 2 : 1;
 }
 
 static inline block_t __start_sum_addr(struct f2fs_sb_info *sbi)
@@ -2617,39 +2610,6 @@ static inline block_t device_free_space_threshold(struct f2fs_sb_info *sbi)
 {
 	return (block_t)(SM_I(sbi)->main_segments * sbi->blocks_per_seg *
 					DEVICE_FREE_SPACE_PERCENT) / 100;
-}
-
-#define __is_meta_io(fio) (PAGE_TYPE_OF_BIO(fio->type) == META &&	\
-				(!is_read_io(fio->rw) || fio->is_meta))
-
-bool f2fs_is_valid_blkaddr(struct f2fs_sb_info *sbi,
-					block_t blkaddr, int type);
-void f2fs_msg(struct super_block *sb, const char *level, const char *fmt, ...);
-static inline void verify_blkaddr(struct f2fs_sb_info *sbi,
-					block_t blkaddr, int type)
-{
-	if (!f2fs_is_valid_blkaddr(sbi, blkaddr, type)) {
-		f2fs_msg(sbi->sb, KERN_ERR,
-			"invalid blkaddr: %u, type: %d, run fsck to fix.",
-			blkaddr, type);
-		f2fs_bug_on(sbi, 1);
-	}
-}
-
-static inline bool __is_valid_data_blkaddr(block_t blkaddr)
-{
-	if (blkaddr == NEW_ADDR || blkaddr == NULL_ADDR)
-		return false;
-	return true;
-}
-
-static inline bool is_valid_data_blkaddr(struct f2fs_sb_info *sbi,
-						block_t blkaddr)
-{
-	if (!__is_valid_data_blkaddr(blkaddr))
-		return false;
-	verify_blkaddr(sbi, blkaddr, DATA_GENERIC);
-	return true;
 }
 
 /*
